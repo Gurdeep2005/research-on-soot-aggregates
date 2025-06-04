@@ -7,7 +7,7 @@ from collections import defaultdict
 from shapely.geometry import Point
 from shapely.ops import unary_union
 
-# this code looks at simulation results of 3 aggregates and returns a figure with 3 plots; Radius of Gyration vs Time, Coordination number vs Time, and Area vs Time
+# this code looks at restructuring simulation results of 3 aggregates and returns a figure with 3 plots; Radius of Gyration vs Time, Coordination number vs Time, and Area vs Time
 
 # variables
 totalTime = 5e-8
