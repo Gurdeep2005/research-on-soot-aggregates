@@ -102,7 +102,7 @@ def getAggregateValuesList(aggregateNumber):
         file_name = os.path.basename(files)
         timestep = int(file_name.replace("particles_", "").replace(".vtk", ""))
         pointsArr = getPointsArrFromVTKFile(files)
-        aggregateValuesList[timestep] = (findRadiusOfGyration(pointsArr), findCoordinationNumber(pointsArr), findAreaOfMonomer(pointsArr)*(particleRadius * particleRadius), averageConvexityOfMonomer(pointsArr))
+        aggregateValuesList[timestep] = (findRadiusOfGyration(pointsArr), findCoordinationNumber(pointsArr), findAreaOfMonomer(pointsArr)*(particleRadius * particleRadius), convexityOverProjectedPlane(pointsArr, 0, 1))
     return aggregateValuesList
 
 # returns a list of the all values averaged from the 3 aggregates at a specific neck fraction value
@@ -134,52 +134,56 @@ def plotAverageValues(label = ""):
 
 
 # setting up plot
-fig, axis = plt.subplots(2, 2, figsize=(20, 10))
+fig, axis = plt.subplots(2, 2, figsize=(18, 8))
 axis[0][0].set_title("Radius of Gyration vs Time")
 axis[0][1].set_title("Coordination Number vs Time")
 axis[1][0].set_title("Area vs Time")
-axis[1][1].set_title("Convexity vs Time")
+axis[1][1].set_title("Z-Convexity vs Time")
 
 # ***************************************************************************
 
-inputList = [("~/Downloads/aggregate_1.5e-11", "Force = 1.5e-11"), ("~/Downloads/aggregate_1e-11", "Force = 1e-11"), ("~/Downloads/aggregate_5e-11", "Force = 5e-11"), ("~/Downloads/aggregate_5e-12", "Force = 5e-12"), ("~/Downloads/aggregate_1e-12", "Force = 1e-12"),("~/Downloads/aggregate_1e-10", "Force = 1e-10")]
+for num in range(1, 2):
 
-for value in inputList:
-    # getting all particle file paths
-    root_dir = os.path.expanduser(value[0])
+    inputList = [(f"/Users/Gurdeep/Desktop/simulationPipeline/simulationSequences/aggregate_{num}/sequence1/spherical_restructuring_anchored", "A"), (f"/Users/Gurdeep/Desktop/simulationPipeline/simulationSequences/aggregate_{num}/sequence2/spherical_restructuring_free", "B"), (f"/Users/Gurdeep/Desktop/simulationPipeline/simulationSequences/aggregate_{num}/sequence3/spherical_restructuring_anchored", "C"), (f"/Users/Gurdeep/Desktop/simulationPipeline/simulationSequences/aggregate_{num}/sequence4/spherical_restructuring_free", "D")]
 
-    particles_by_agg_frac = defaultdict(list)
+    for value in inputList:
+        # getting all particle file paths
+        root_dir = os.path.expanduser(value[0])
 
-    for dirpath, dirnames, filenames in os.walk(root_dir):
-        for filename in filenames:
-            if filename.startswith("particles_") and filename.endswith(".vtk"):
-                # parts = dirpath.split(os.sep)
-                # if len(parts) >= 3 and parts[-3].startswith("aggregate_"):
-                #     agg = parts[-3].split("_")[-1]
-                #     key = (f"aggregate_{agg}")
-                #     full_path = os.path.join(dirpath, filename)
-                #     particles_by_agg_frac[key].append(full_path)
-                full_path = os.path.join(dirpath, filename)
-                particles_by_agg_frac["aggregate_1"].append(full_path)
+        particles_by_agg_frac = defaultdict(list)
 
-    plotAverageValues(value[1])
+        for dirpath, dirnames, filenames in os.walk(root_dir):
+            for filename in filenames:
+                if filename.startswith("particles_") and filename.endswith(".vtk"):
+                    # parts = dirpath.split(os.sep)
+                    # if len(parts) >= 3 and parts[-3].startswith("aggregate_"):
+                    #     agg = parts[-3].split("_")[-1]
+                    #     key = (f"aggregate_{agg}")
+                    #     full_path = os.path.join(dirpath, filename)
+                    #     particles_by_agg_frac[key].append(full_path)
+                    full_path = os.path.join(dirpath, filename)
+                    particles_by_agg_frac[f"aggregate_{num}"].append(full_path)
 
-# ***************************************************************************
+        plotAverageValues(value[num])
 
-axis[0][0].legend()
-axis[0][1].legend()
-axis[1][0].legend()
-axis[1][1].legend()
+    # ***************************************************************************
 
-axis[0][0].set_ylabel("Radius of Gyration")
-axis[0][1].set_ylabel("Coordination Number")
-axis[1][0].set_ylabel("Area")
-axis[1][1].set_ylabel("Convexity")
-axis[0][0].set_xlabel("Time (s)")
-axis[0][1].set_xlabel("Time (s)")
-axis[1][0].set_xlabel("Time (s)")
-axis[1][1].set_xlabel("Time (s)")
-plt.tight_layout()
+    axis[0][0].legend()
+    axis[0][1].legend()
+    axis[1][0].legend()
+    axis[1][1].legend()
 
-#plt.savefig("postProcessingPlot.png")
-plt.show()
+    axis[0][0].set_ylabel("Radius of Gyration")
+    axis[0][1].set_ylabel("Coordination Number")
+    axis[1][0].set_ylabel("Area")
+    axis[1][1].set_ylabel("Z-Convexity")
+    axis[0][0].set_xlabel("Time (s)")
+    axis[0][1].set_xlabel("Time (s)")
+    axis[1][0].set_xlabel("Time (s)")
+    axis[1][1].set_xlabel("Time (s)")
+    plt.tight_layout()
+
+    plt.savefig(f"aggregate_{num}_pipeline_result.png")
+    #plt.show()
+
+    plt.clf()
