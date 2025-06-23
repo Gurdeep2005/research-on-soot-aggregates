@@ -132,19 +132,17 @@ def plotAverageValues(label = ""):
 
     axis[1][1].plot(xVals, [x[3] for x in averageValues], label=label)
 
+for num in range(1, 6):
+    # setting up plot
+    fig, axis = plt.subplots(2, 2, figsize=(18, 8))
+    axis[0][0].set_title("Radius of Gyration vs Time")
+    axis[0][1].set_title("Coordination Number vs Time")
+    axis[1][0].set_title("Area vs Time")
+    axis[1][1].set_title("Z-Convexity vs Time")
 
-# setting up plot
-fig, axis = plt.subplots(2, 2, figsize=(18, 8))
-axis[0][0].set_title("Radius of Gyration vs Time")
-axis[0][1].set_title("Coordination Number vs Time")
-axis[1][0].set_title("Area vs Time")
-axis[1][1].set_title("Z-Convexity vs Time")
+    # ***************************************************************************
 
-# ***************************************************************************
-
-for num in range(1, 2):
-
-    inputList = [(f"/Users/Gurdeep/Desktop/simulationPipeline/simulationSequences/aggregate_{num}/sequence1/spherical_restructuring_anchored", "A"), (f"/Users/Gurdeep/Desktop/simulationPipeline/simulationSequences/aggregate_{num}/sequence2/spherical_restructuring_free", "B"), (f"/Users/Gurdeep/Desktop/simulationPipeline/simulationSequences/aggregate_{num}/sequence3/spherical_restructuring_anchored", "C"), (f"/Users/Gurdeep/Desktop/simulationPipeline/simulationSequences/aggregate_{num}/sequence4/spherical_restructuring_free", "D")]
+    inputList = [(f"/home/gurdeep/Desktop/simulationPipeline/simulationSequences/aggregate_{num}/sequence1/spherical_restructuring_anchored/", "A"), (f"//home/gurdeep/Desktop/simulationPipeline/simulationSequences/aggregate_{num}/sequence2/spherical_restructuring_free", "B"), (f"/home/gurdeep/Desktop/simulationPipeline/simulationSequences/aggregate_{num}/sequence3/spherical_restructuring_anchored", "C"), (f"/home/gurdeep/Desktop/simulationPipeline/simulationSequences/aggregate_{num}/sequence4/spherical_restructuring_free", "D")]
 
     for value in inputList:
         # getting all particle file paths
@@ -162,9 +160,9 @@ for num in range(1, 2):
                     #     full_path = os.path.join(dirpath, filename)
                     #     particles_by_agg_frac[key].append(full_path)
                     full_path = os.path.join(dirpath, filename)
-                    particles_by_agg_frac[f"aggregate_{num}"].append(full_path)
+                    particles_by_agg_frac["aggregate_1"].append(full_path)
 
-        plotAverageValues(value[num])
+        plotAverageValues(value[1])
 
     # ***************************************************************************
 
