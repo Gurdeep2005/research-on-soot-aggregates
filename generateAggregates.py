@@ -26,7 +26,7 @@ r = 1.4e-8
 Df = 1.8
 
 os.chdir(path)
-i = 2
+i = 5
 while i < numberOfAggreagtesToGenerate:
     folder_name = f"aggregate_{i}"
     os.makedirs(folder_name)

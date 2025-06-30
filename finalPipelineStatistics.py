@@ -6,15 +6,18 @@ import os
 from collections import defaultdict
 from shapely.geometry import Point
 from shapely.ops import unary_union
+import statistics
+import math
 
 # this code looks at restructuring simulation results of 1 aggregate and returns a figure with 3 plots; Radius of Gyration vs Time, Coordination number vs Time, and Area vs Time
-plt.rcParams.update({'font.size': 16})
+plt.rcParams.update({'font.size': 20})
 
 # variables
 totalTime = 5e-8
-numberOfDumps = 301
+numberOfDumps = 101
+numberOfDumps += 1
 particleRadius = 14e-9
-numberOfAggregates = 1
+numberOfAggregates = 4
 
 # Read the VTK dump file
 def getPointsArrFromVTKFile(filePath):
@@ -96,54 +99,91 @@ def averageConvexityOfMonomer(particlePoints):
     return sum(convexities) / len(convexities)
 
 # get aggregate value list which holds the radius of gyration and coordination number at each timestamp in a tuple
-def getAggregateValuesList(aggregateNumber):
-    aggregateValuesList = list(range(numberOfDumps))
-    for files in particles_by_agg_frac[(f"aggregate_{aggregateNumber}")]:
-        file_name = os.path.basename(files)
-        timestep = int(file_name.replace("particles_", "").replace(".vtk", ""))
-        pointsArr = getPointsArrFromVTKFile(files)
-        aggregateValuesList[timestep] = (findRadiusOfGyration(pointsArr), findCoordinationNumber(pointsArr), findAreaOfMonomer(pointsArr)*(particleRadius * particleRadius), convexityOverProjectedPlane(pointsArr, 0, 1))
-    return aggregateValuesList
+# def getAggregateValuesList(aggregateNumber):
+#     aggregateValuesList = list(range(numberOfDumps))
+#     for files in particles_by_agg_frac[(f"aggregate_{aggregateNumber}")]:
+#         file_name = os.path.basename(files)
+#         timestep = int(file_name.replace("particles_", "").replace(".vtk", ""))
+#         pointsArr = getPointsArrFromVTKFile(files)
+#         aggregateValuesList[timestep] = (findRadiusOfGyration(pointsArr), findCoordinationNumber(pointsArr), findAreaOfMonomer(pointsArr)*(particleRadius * particleRadius), convexityOverProjectedPlane(pointsArr, 0, 1))
+#     return aggregateValuesList
 
 # returns a list of the all values averaged from the 3 aggregates at a specific neck fraction value
-def getAverageValuesList():
-    aggreagte1Values = getAggregateValuesList(1)
+# def getAverageValuesList():
+#     aggreagte1Values = getAggregateValuesList(1)
 
-    averageValues = list(range(numberOfDumps))
-    for i in range(len(aggreagte1Values)):
-        averageValues[i] = []
-        for index in range(len(aggreagte1Values[i])):
-            averageValues[i].append((aggreagte1Values[i][index]))
+#     averageValues = list(range(numberOfDumps))
+#     for i in range(len(aggreagte1Values)):
+#         averageValues[i] = []
+#         for index in range(len(aggreagte1Values[i])):
+#             averageValues[i].append((aggreagte1Values[i][index]))
     
-    return averageValues
+#     return averageValues
 
 # plot values
 timeBetweenDump = totalTime / numberOfDumps
 
-xVals = [i * timeBetweenDump for i in range(numberOfDumps)]
-def plotAverageValues(label = ""):
-    averageValues = getAverageValuesList()
+# xVals = [i * timeBetweenDump for i in range(numberOfDumps)]
+# def plotAverageValues(label = ""):
+#     averageValues = getAverageValuesList()
 
-    axis[0][0].plot(xVals, [x[0] for x in averageValues], label=label)
+#     axis[0][0].plot(xVals, [x[0] for x in averageValues], label=label)
 
-    axis[0][1].plot(xVals, [x[1] for x in averageValues], label=label)
+#     axis[0][1].plot(xVals, [x[1] for x in averageValues], label=label)
 
-    axis[1][0].plot(xVals, [x[2] for x in averageValues], label=label)
+#     axis[1][0].plot(xVals, [x[2] for x in averageValues], label=label)
 
-    axis[1][1].plot(xVals, [x[3] for x in averageValues], label=label)
+#     axis[1][1].plot(xVals, [x[3] for x in averageValues], label=label)
 
-for num in range(4, 5):
-    # setting up plot
-    fig, axis = plt.subplots(2, 2, figsize=(18, 8))
-    axis[0][0].set_title("Radius of Gyration vs Time")
-    axis[0][1].set_title("Coordination Number vs Time")
-    axis[1][0].set_title("Area vs Time")
-    axis[1][1].set_title("Z-Convexity vs Time")
+def populateConvexityLists(dict, sequenceNumber):
+    finalConvex, secondToLastConvexity = None, None
+    for files in dict[(f"aggregate_1")]:
+        file_name = os.path.basename(files)
+        timestep = int(file_name.replace("particles_", "").replace(".vtk", ""))
+        pointsArr = getPointsArrFromVTKFile(files)
+
+        if(timestep == numberOfDumps-1):
+            finalConvex = convexityOverProjectedPlane(pointsArr, 0, 1)
+        elif(timestep == numberOfDumps-2):
+            secondToLastConvexity = convexityOverProjectedPlane(pointsArr, 0, 1)
+    finalConvexity[f"sequence{sequenceNumber}"].append(finalConvex)
+    differenceInConvexity[f"sequence{sequenceNumber}"].append(finalConvex-secondToLastConvexity)
+    
+experimentalConvexity = ((0.73713, 0.099442), (0.880628, 0.040486), (0.56, 0.06), (0.87, 0.04))
+
+labels = ["TEG anchored", "TEG free", "H\u20820 anchored", "H\u20820 free"]
+shape = ["o", "s", "v", "D"]
+def plotConvexities():
+    #axis[1].hist(differenceInConvexity["sequence1"] + differenceInConvexity["sequence2"] + differenceInConvexity["sequence3"] + differenceInConvexity["sequence4"], bins=10)
+    
+    x = np.linspace(0.5, 0.9, 100)
+    y=x
+    axis.plot(x, y, color="black", linestyle="--")
+    
+    x=0
+    for sequence in differenceInConvexity.keys():
+        mean = statistics.mean(finalConvexity[sequence])
+        standardDeviation = statistics.stdev(finalConvexity[sequence])
+        CI = 1.96*standardDeviation/math.sqrt(numberOfAggregates)
+
+        axis.errorbar(experimentalConvexity[x][0], mean, yerr=CI, xerr=experimentalConvexity[x][1],label=labels[x], fmt=shape[x])
+        x += 1
+
+# setting up plot
+fig, axis = plt.subplots(1, figsize=(9, 8))
+#axis.set_title("Simulation VS Experimental Final Convexity")
+#axis[1].set_title("Change in Convexity")
+
+finalConvexity = {"sequence1":[], "sequence2":[], "sequence3":[], "sequence4":[]}
+differenceInConvexity = {"sequence1":[], "sequence2":[], "sequence3":[], "sequence4":[]}
+
+numberOfAggregates = 100
+for num in range(1, 101):
 
     # ***************************************************************************
 
     inputList = [(f"/home/gurdeep/Desktop/simulationPipeline/simulationSequences/aggregate_{num}/sequence1/spherical_restructuring_anchored/", "A"), (f"//home/gurdeep/Desktop/simulationPipeline/simulationSequences/aggregate_{num}/sequence2/spherical_restructuring_free", "B"), (f"/home/gurdeep/Desktop/simulationPipeline/simulationSequences/aggregate_{num}/sequence3/spherical_restructuring_anchored", "C"), (f"/home/gurdeep/Desktop/simulationPipeline/simulationSequences/aggregate_{num}/sequence4/spherical_restructuring_free", "D")]
-
+    sequenceNum = 1
     for value in inputList:
         # getting all particle file paths
         root_dir = os.path.expanduser(value[0])
@@ -152,7 +192,7 @@ for num in range(4, 5):
 
         for dirpath, dirnames, filenames in os.walk(root_dir):
             for filename in filenames:
-                if filename.startswith("particles_") and filename.endswith(".vtk"):
+                if filename.startswith("particles_") and (filename.endswith(f"{numberOfDumps-1}.vtk") or filename.endswith(f"{numberOfDumps-2}.vtk")):
                     # parts = dirpath.split(os.sep)
                     # if len(parts) >= 3 and parts[-3].startswith("aggregate_"):
                     #     agg = parts[-3].split("_")[-1]
@@ -162,26 +202,20 @@ for num in range(4, 5):
                     full_path = os.path.join(dirpath, filename)
                     particles_by_agg_frac["aggregate_1"].append(full_path)
 
-        plotAverageValues(value[1])
+        populateConvexityLists(particles_by_agg_frac, sequenceNum)
+        sequenceNum += 1
 
     # ***************************************************************************
+plotConvexities()
 
-    axis[0][0].legend()
-    axis[0][1].legend()
-    axis[1][0].legend()
-    axis[1][1].legend()
+axis.legend()
+#axis[1].legend()
 
-    axis[0][0].set_ylabel("Radius of Gyration")
-    axis[0][1].set_ylabel("Coordination Number")
-    axis[1][0].set_ylabel("Area")
-    axis[1][1].set_ylabel("Z-Convexity")
-    axis[0][0].set_xlabel("Time (s)")
-    axis[0][1].set_xlabel("Time (s)")
-    axis[1][0].set_xlabel("Time (s)")
-    axis[1][1].set_xlabel("Time (s)")
-    plt.tight_layout()
+axis.set_ylabel("Simulation Projected-Convexity")
+#axis[1].set_ylabel("Amount of aggregates")
+axis.set_xlabel("Experimental Projected-Convexity")
+#axis[1].set_xlabel("Convexity Change")
+plt.tight_layout()
 
-    plt.savefig(f"aggregate_{num}_pipeline_result.png")
-    #plt.show()
-
-    plt.clf()
+plt.savefig(f"PipelineResults.pdf")
+#plt.show()
